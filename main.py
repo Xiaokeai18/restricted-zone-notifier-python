@@ -32,7 +32,7 @@ import socket
 import cv2
 
 import logging as log
-import paho.mqtt.client as mqtt
+#import paho.mqtt.client as mqtt
 
 from threading import Thread
 from collections import namedtuple
@@ -105,7 +105,7 @@ def ssd_out(res, args, initial_wh, selected_region):
     :param selected_region: Selected region coordinates
     :return: None
     """
-    global INFO
+    global INFO,frame
     person = []
     INFO = INFO._replace(safe=True)
 
@@ -117,6 +117,7 @@ def ssd_out(res, args, initial_wh, selected_region):
             xmax = int(obj[5] * initial_wh[0])
             ymax = int(obj[6] * initial_wh[1])
             person.append([xmin, ymin, xmax, ymax])
+            cv2.rectangle(frame, (xmin,ymin), (xmax,ymax),(0,255,255),2)
 
     for p in person:
         # area_of_person gives area of the detected person
@@ -161,13 +162,15 @@ def main():
 
     :return: None
     """
-    global DELAY
+    global DELAY,frame
     global CLIENT
     global SIG_CAUGHT
     global KEEP_RUNNING
+    '''
     CLIENT = mqtt.Client()
     CLIENT.connect(MQTT_HOST, MQTT_PORT, MQTT_KEEPALIVE_INTERVAL)
     CLIENT.subscribe(TOPIC)
+    '''
     log.basicConfig(format="[ %(levelname)s ] %(message)s",
                     level=log.INFO, stream=sys.stdout)
     args = build_argparser().parse_args()
@@ -197,11 +200,11 @@ def main():
     infer_network = Network()
     # Load the network to IE plugin to get shape of input layer
     n, c, h, w = infer_network.load_model(args.model, args.device, 1, 1, 0, args.cpu_extension)[1]
-
+    '''
     message_thread = Thread(target=message_runner, args=())
     message_thread.setDaemon(True)
     message_thread.start()
-
+    '''
     ret, frame = cap.read()
     while ret:
 
@@ -286,10 +289,10 @@ def main():
             KEEP_RUNNING = False
             break
     infer_network.clean()
-    message_thread.join()
+    #message_thread.join()
     cap.release()
     cv2.destroyAllWindows()
-    CLIENT.disconnect()
+    #CLIENT.disconnect()
 
 
 if __name__ == '__main__':
